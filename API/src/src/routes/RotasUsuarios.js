@@ -2,18 +2,20 @@ import { BD } from '../../db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-
+const SECRET_KEY = 'chave_secreta'; 
 
 class RotasUsuarios {
     static async novoUsuario(req, res) {
         const { nome, email, senha, telefone, foto_perfil, data_cadastro } = req.body;
+        const saltRounds = 10;
+        const senhaCriptografada = await bcrypt.hash(senha, saltRounds);
    
         try {
 
             const resultado = await BD.query(
                 `INSERT INTO usuarios (nome, email, senha, telefone, foto_perfil, data_cadastro) 
                  VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-                [nome, email, senha, telefone, foto_perfil, data_cadastro]
+                [nome, email, senhaCriptografada, telefone, foto_perfil, data_cadastro]
             );
 
             res.status(201).send(resultado.rows[0]);
@@ -83,7 +85,7 @@ class RotasUsuarios {
                 { id_usuario: usuarios.id_usuario, nome: usuarios.nome, email: usuarios.email },
                 SECRET_KEY, { expiresIn: '1h' })
 
-            res.status(200).json({ message: 'Login realizado com sucesso', token, nome: usuarios.nome, id_usuario: usuarios.id_usuario,  }); 
+            res.status(200).json({ message: 'Login realizado com sucesso', token, nome: usuarios.nome, id_usuario: usuarios.id_usuario  }); 
         } catch (error) {
             console.error('Erro ao realizar login:', error);
             res.status(500).json({ message: 'Erro ao realizar login', error: error.message });

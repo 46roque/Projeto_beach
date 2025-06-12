@@ -1,8 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import { testarConexao } from './db.js';
+import { testarConexao } from '../../db.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './Swagger.js';
+
 
 // Importações de rotas
 import RotasUsuarios, {autenticarToken} from './src/routes/RotasUsuarios.js';
@@ -22,11 +23,11 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rotas de Usuários
 app.post('/usuarios', RotasUsuarios.novoUsuario);
-app.get('/usuarios', autenticarToken, RotasUsuarios.listarUsuario);
-app.put('/usuarios/:id', autenticarToken, RotasUsuarios.atualizarUsuario);
-app.delete('/usuarios/:id', autenticarToken, RotasUsuarios.deletarUsuario);
+app.get('/usuarios', RotasUsuarios.listarUsuario);
+app.put('/usuarios/:id',  RotasUsuarios.atualizarUsuario);
+app.delete('/usuarios/:id',  RotasUsuarios.deletarUsuario);
 app.post('/usuarios/login', RotasUsuarios.login);
-app.patch('/usuarios/:id', autenticarToken, RotasUsuarios.editar);
+app.patch('/usuarios/:id',  RotasUsuarios.editar);
 app.get('/usuarios/filtrarUsuario', RotasUsuarios.filtrarUsuario);
 
 
