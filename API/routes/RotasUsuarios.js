@@ -1,4 +1,4 @@
-import { BD } from '../../db.js';
+import { BD } from '../db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -6,16 +6,16 @@ const SECRET_KEY = 'chave_secreta';
 
 class RotasUsuarios {
     static async novoUsuario(req, res) {
-        const { nome, email, senha, telefone, foto_perfil, data_cadastro } = req.body;
+        const { nome, email, senha, telefone, foto_perfil, data_cadastro, ativo } = req.body;
         const saltRounds = 10;
         const senhaCriptografada = await bcrypt.hash(senha, saltRounds);
-   
+
         try {
 
             const resultado = await BD.query(
-                `INSERT INTO usuarios (nome, email, senha, telefone, foto_perfil, data_cadastro) 
-                 VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-                [nome, email, senhaCriptografada, telefone, foto_perfil, data_cadastro]
+                `INSERT INTO usuarios (nome, email, senha, telefone, foto_perfil, data_cadastro, ativo) 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+                [nome, email, senhaCriptografada, telefone, foto_perfil, data_cadastro, ativo]
             );
 
             res.status(201).send(resultado.rows[0]);
@@ -25,27 +25,34 @@ class RotasUsuarios {
         }
     }
 
-    static async atualizarUsuario(req, res) {
-        const { id_usuario } = req.params;
-        const { nome, email, senha, telefone, perfil_usuario, data_cadastro } = req.body;
-        try {
-            const resultado = await BD.query(
-                `UPDATE usuarios SET nome = $1, email = $2, senha = $3, telefone = $4, perfil_usuario = $5, data_cadastro = $6
-                 WHERE id_usuario = $7 RETURNING *`, 
-                [nome, email, senha, telefone, perfil_usuario, data_cadastro, id_usuario] 
-            );
+static async atualizarUsuario(req, res) {
+    const { id } = req.params;
+    const { nome, email, senha, telefone, foto_perfil, data_cadastro } = req.body;
 
-            res.status(200).json(resultado.rows[0]);
-        } catch (error) {
-            res.status(500).json({ message: 'Erro ao atualizar o usuário', error: error.message });
-        }
+    try {
+        const resultado = await BD.query(
+            `UPDATE usuarios 
+             SET nome = $1, email = $2, senha = $3, telefone = $4, 
+             foto_perfil = $5, data_cadastro = $6 
+             WHERE id_usuario = $7`,
+            [nome, email, senha, telefone, foto_perfil, data_cadastro, id]
+        );
+
+        return res.status(200).json({ message: 'Usuário atualizado com sucesso' });
+    } catch (error) {
+        console.error('Erro ao atualizar usuário:', error);
+        return res.status(500).json({ message: 'Erro ao atualizar usuário', error: error.message });
     }
+}
+
+ 
 
     static async listarUsuario(req, res) {
         try {
+            console.log('Listando usuários...');
             const usuario = await BD.query('SELECT * FROM usuarios');
             res.status(200).json(usuario.rows);
-        } catch (error) {
+        } catch (error) { 
             res.status(500).json({ message: 'Erro ao listar os usuários', error: error.message });
         }
     }
@@ -85,7 +92,7 @@ class RotasUsuarios {
                 { id_usuario: usuarios.id_usuario, nome: usuarios.nome, email: usuarios.email },
                 SECRET_KEY, { expiresIn: '1h' })
 
-            res.status(200).json({ message: 'Login realizado com sucesso', token, nome: usuarios.nome, id_usuario: usuarios.id_usuario  }); 
+            res.status(200).json({ message: 'Login realizado com sucesso', token, nome: usuarios.nome, id_usuario: usuarios.id_usuario });
         } catch (error) {
             console.error('Erro ao realizar login:', error);
             res.status(500).json({ message: 'Erro ao realizar login', error: error.message });
@@ -95,7 +102,7 @@ class RotasUsuarios {
     static async editar(req, res) {
         const { id } = req.params;
 
-        const { nome, email, senha, foto_perfil, data_cadastro, ativo } = req.body;
+        const { nome, email, senha, telefone, foto_perfil, data_cadastro, ativo } = req.body;
         console.log(typeof ativo);
         try {
             //inicializar arrays(vetores) para armazenar os campos e valores a serem atualizados
@@ -115,6 +122,10 @@ class RotasUsuarios {
                 const saltRounds = 10;
                 const senhaCriptografada = await bcrypt.hash(senha, saltRounds);
                 valores.push(senhaCriptografada);
+            }
+            if (telefone !== undefined) {
+                campos.push(`telefone=$${valores.length + 1}`);
+                valores.push(telefone);
             }
             if (foto_perfil !== undefined) {
                 campos.push(`foto_perfil=$${valores.length + 1}`);
@@ -158,15 +169,15 @@ class RotasUsuarios {
         const { nome } = req.query;
 
         try {
-            const query = `SELECT * FROM usuarios
-           WHERE nome like $1 and ativo = true order by id_usuario`;
-            const valores = [`%${nome}%`];
+            const query = `SELECT * FROM usuarios 
+            WHERE nome like $1 and ativo = true order by id_usuario`;  
+            const valores = [`%${nome}%`];   
 
-            const resposta = await BD.query(query, valores);
+            const resposta = await BD.query(query, valores); 
 
-            return res.status(200).json(resposta.rows);
+            return res.status(200).json(resposta.rows); 
         } catch (error) {
-            console.error('Erro ao filtrar usuarios', error);
+            console.error('Erro ao filtrar usuarios', error);  
             return res.status(500).json({ message: 'Erro ao filtrar usuarios', error: error.message })
         }
     }

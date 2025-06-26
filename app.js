@@ -1,9 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import { testarConexao } from '../../db.js';
+import { testarConexao } from './db.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './Swagger.js';
-
 
 // Importações de rotas
 import RotasUsuarios, {autenticarToken} from './src/routes/RotasUsuarios.js';
